@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingEnd="8dp">
+
+    <ImageButton
+        android:id="@+id/btn_add"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/playlist_add"
+        android:scaleType="centerInside"
+        android:contentDescription="Add" />
+
+    <ImageButton
+        android:id="@+id/btn_rename"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/rename"
+        android:scaleType="centerInside"
+        android:contentDescription="Rename" />
+
+    <ImageButton
+        android:id="@+id/btn_move_up"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/arrow_up"
+        android:scaleType="centerInside"
+        android:contentDescription="Move Up" />
+
+    <ImageButton
+        android:id="@+id/btn_move_down"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/arrow_down"
+        android:scaleType="centerInside"
+        android:contentDescription="Move Down" />
+
+    <ImageButton
+        android:id="@+id/btn_delete"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/trash_can"
+        android:scaleType="centerInside"
+        android:contentDescription="Delete" />
+
+</LinearLayout>

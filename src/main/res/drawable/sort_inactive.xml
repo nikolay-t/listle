@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+    
+    <!-- Scaled (80%) and Centered Sort Bars Glyph -->
+    <group
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        android:translateX="12.8"
+        android:translateY="12.8">
+        <path
+            android:fillColor="#000000"
+            android:pathData="M21.332 96h21.336C45.602 96 48 93.602 48 90.668c0 -2.934 -2.398 -5.336 -5.332 -5.336H21.332c-2.934 0 -5.332 2.402 -5.332 5.336S18.398 96 21.332 96ZM16 37.332c0 2.934 2.398 5.336 5.332 5.336h85.336c2.934 0 5.332 -2.402 5.332 -5.336S109.602 32 106.668 32H21.332C18.398 32 16 34.398 16 37.332Zm5.332 32h53.336C77.602 69.332 80 66.934 80 64c0 -2.934 -2.398 -5.332 -5.332 -5.332H21.332C18.398 58.668 16 61.066 16 64c0 2.934 2.398 5.332 5.332 5.332Zm0 0" />
+    </group>
+
+    <!-- Line-drawn Rounded Square Container -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#000000"
+        android:strokeWidth="10"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 28 16 H 100 A 12 12 0 0 1 112 28 V 100 A 12 12 0 0 1 100 112 H 28 A 12 12 0 0 1 16 100 V 28 A 12 12 0 0 1 28 16 Z" />
+</vector>
