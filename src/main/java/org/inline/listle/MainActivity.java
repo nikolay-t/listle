@@ -9,14 +9,17 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ListPopupWindow;
 import android.widget.ListView;
 
 import org.inline.listle.R;
@@ -204,8 +207,7 @@ public class MainActivity extends Activity {
             invalidateOptionsMenu(); // Redraw menu to update sort icon color
             return true;
         } else if (id == ACTION_OPTIONS) {
-            Intent intent = new Intent(MainActivity.this, OptionsActivity.class);
-            startActivity(intent);
+            showOptionsPopup(item);
             return true;
         } else if (id == ACTION_MOVE_UP) {
             if (selectedItem != null) {
@@ -246,6 +248,110 @@ public class MainActivity extends Activity {
         adapter.setVerticalInterval(verticalInterval);
         updateDividerHeight();
         applyTheme();
+    }
+
+    private void showOptionsPopup(final MenuItem item) {
+        String[] options = {getString(R.string.search), getString(R.string.options)};
+        View anchor = findMenuItemView(item.getItemId());
+        final ListPopupWindow popup = new ListPopupWindow(this);
+        if (anchor != null) {
+            popup.setAnchorView(anchor);
+        }
+        popup.setDropDownGravity(Gravity.END);
+        popup.setHeight(ListPopupWindow.WRAP_CONTENT);
+        popup.setModal(true);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1, options);
+        popup.setAdapter(adapter);
+
+        int maxWidth = 0;
+        for (int i = 0; i < adapter.getCount(); i++) {
+            View row = adapter.getView(i, null, null);
+            row.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            maxWidth = Math.max(maxWidth, row.getMeasuredWidth());
+        }
+        popup.setWidth(maxWidth);
+        popup.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                popup.dismiss();
+                if (position == 0) {
+                    showSearchDialog();
+                } else {
+                    Intent intent = new Intent(MainActivity.this, OptionsActivity.class);
+                    startActivity(intent);
+                }
+            }
+        });
+        popup.show();
+    }
+
+    private View findMenuItemView(int id) {
+        View view = findViewById(id);
+        if (view != null) {
+            return view;
+        }
+        return findViewByIdRecursive(getWindow().getDecorView(), id);
+    }
+
+    private View findViewByIdRecursive(View view, int id) {
+        if (view == null) {
+            return null;
+        }
+        if (view.getId() == id) {
+            return view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View found = findViewByIdRecursive(group.getChildAt(i), id);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void showSearchDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.search);
+
+        final EditText input = new EditText(this);
+        input.setHint(R.string.enter_search_string);
+        builder.setView(input);
+
+        builder.setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String query = input.getText().toString().trim().toLowerCase();
+                if (query.isEmpty()) {
+                    return;
+                }
+                int start = 0;
+                if (selectedItem != null) {
+                    start = items.indexOf(selectedItem) + 1;
+                }
+                for (int k = 0; k < items.size(); k++) {
+                    int i = (start + k) % items.size();
+                    String name = items.get(i).getName();
+                    if (name != null && name.toLowerCase().contains(query)) {
+                        selectedItem = items.get(i);
+                        adapter.setSelectedPosition(i);
+                        ensureItemVisible(i);
+                        return;
+                    }
+                }
+                new AlertDialog.Builder(MainActivity.this)
+                        .setMessage(R.string.item_not_found)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+            }
+        });
+
+        builder.setNegativeButton(R.string.cancel, null);
+        builder.show();
     }
 
     private void setupListeners() {
