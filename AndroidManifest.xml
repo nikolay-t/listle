@@ -22,5 +22,10 @@
             android:name="OptionsActivity"
             android:theme="@style/AppTheme"
             />
+
+        <activity
+            android:name="PagesActivity"
+            android:theme="@style/AppTheme"
+            />
     </application>
 </manifest>

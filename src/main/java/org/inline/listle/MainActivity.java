@@ -19,12 +19,12 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListPopupWindow;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import org.inline.listle.R;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,8 +32,8 @@ import java.util.Comparator;
 import java.util.List;
 
 public class MainActivity extends Activity {
-    private static final String[] PRIORITIES = {"!!", "!", "!?", "?", "+"};
-    private static final int DEFAULT_PRIORITY_INDEX = 4; // "+"
+    private static final String[] PRIORITIES = PagesStore.PRIORITIES;
+    private static final int DEFAULT_PRIORITY_INDEX = PagesStore.DEFAULT_PRIORITY_INDEX;
     private static final int DEFAULT_FONT_SIZE = 22;
     private static final int DEFAULT_VERTICAL_INTERVAL = 8;
     private static final boolean DEFAULT_THEME_LIGHT = true;
@@ -41,7 +41,7 @@ public class MainActivity extends Activity {
     private static final String KEY_FONT_SIZE = "font_size";
     private static final String KEY_VERTICAL_INTERVAL = "vertical_interval";
     private static final String KEY_THEME_LIGHT = "theme_light";
-    private static final String KEY_ITEMS = "items";
+    private static final String KEY_CURRENT_PAGE = "current_page";
     private static final int ACTION_ADD = 1;
     private static final int ACTION_EDIT = 2;
     private static final int ACTION_SORT = 3;
@@ -61,10 +61,12 @@ public class MainActivity extends Activity {
     private boolean isMoveMode = false;
     private boolean isEditBarVisible = false;
     private ListleItem selectedItem = null;
+    private List<PagesStore.Page> pages;
+    private int currentPageIndex = 0;
+    private TextView titleView;
 
     private SharedPreferences prefs;
     private View editBarView;
-    private int defaultDisplayOptions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,12 +86,14 @@ public class MainActivity extends Activity {
         originalItems = new ArrayList<>();
 
         loadPreferences();
-        loadItems();
 
         itemListView = (ListView) findViewById(R.id.item_list);
         ActionBar actionBar = getActionBar();
         if (actionBar != null) {
-            defaultDisplayOptions = actionBar.getDisplayOptions();
+            actionBar.setCustomView(getTitleView(),
+                    new ActionBar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT));
+            actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
         }
         adapter = new ListleAdapter(this, items, fontSize, verticalInterval, PRIORITIES);
         adapter.setOnStatusClickListener(new ListleAdapter.OnStatusClickListener() {
@@ -140,6 +144,8 @@ public class MainActivity extends Activity {
         itemListView.setDivider(null);
         itemListView.setDividerHeight(0);
         updateDividerHeight();
+
+        loadPages();
 
         applyTheme();
 
@@ -243,7 +249,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         loadPreferences();
-        loadItems();
+        loadPages();
         adapter.setFontSize(fontSize);
         adapter.setVerticalInterval(verticalInterval);
         updateDividerHeight();
@@ -251,7 +257,9 @@ public class MainActivity extends Activity {
     }
 
     private void showOptionsPopup(final MenuItem item) {
-        String[] options = {getString(R.string.search), getString(R.string.options)};
+        final String[] options = {getString(R.string.pages), getString(R.string.search),
+                getString(R.string.options)};
+        final int[] icons = {R.drawable.pages, R.drawable.text_search, R.drawable.tune_variant};
         View anchor = findMenuItemView(item.getItemId());
         final ListPopupWindow popup = new ListPopupWindow(this);
         if (anchor != null) {
@@ -261,7 +269,18 @@ public class MainActivity extends Activity {
         popup.setHeight(ListPopupWindow.WRAP_CONTENT);
         popup.setModal(true);
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_list_item_1, options);
+                R.layout.popup_menu_item, android.R.id.text1, options) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                ImageView icon = (ImageView) view.findViewById(R.id.popup_icon);
+                icon.setImageResource(icons[position]);
+                TextView text = (TextView) view.findViewById(android.R.id.text1);
+                text.setTextColor(isThemeLight
+                        ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2"));
+                return view;
+            }
+        };
         popup.setAdapter(adapter);
 
         int maxWidth = 0;
@@ -277,8 +296,11 @@ public class MainActivity extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 popup.dismiss();
                 if (position == 0) {
+                    Intent intent = new Intent(MainActivity.this, PagesActivity.class);
+                    startActivity(intent);
+                } else if (position == 1) {
                     showSearchDialog();
-                } else {
+                } else if (position == 2) {
                     Intent intent = new Intent(MainActivity.this, OptionsActivity.class);
                     startActivity(intent);
                 }
@@ -439,12 +461,13 @@ public class MainActivity extends Activity {
                 actionBar.setCustomView(editBarView,
                         new ActionBar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT));
-                actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
             } else {
                 editBarView = null;
-                actionBar.setDisplayShowCustomEnabled(false);
-                actionBar.setDisplayOptions(defaultDisplayOptions);
+                actionBar.setCustomView(getTitleView(),
+                        new ActionBar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT));
             }
+            actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
         }
         invalidateOptionsMenu();
     }
@@ -715,6 +738,11 @@ public class MainActivity extends Activity {
 
         // Update edit bar icon colors
         applyEditBarTint();
+
+        if (titleView != null) {
+            titleView.setTextColor(isThemeLight
+                    ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2"));
+        }
     }
 
     private void applySorting() {
@@ -732,13 +760,103 @@ public class MainActivity extends Activity {
         adapter.notifyDataSetChanged();
     }
 
-    private int getPriorityIndex(String priority) {
-        for (int i = 0; i < PRIORITIES.length; i++) {
-            if (PRIORITIES[i].equals(priority)) {
-                return i;
-            }
+    private TextView getTitleView() {
+        if (titleView == null) {
+            titleView = new TextView(this);
+            titleView.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+            titleView.setTextSize(20);
+            titleView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showPageSwitchPopup();
+                }
+            });
         }
-        return DEFAULT_PRIORITY_INDEX;
+        titleView.setTextColor(isThemeLight
+                ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2"));
+        updatePageTitle();
+        return titleView;
+    }
+
+    private void updatePageTitle() {
+        if (titleView != null && pages != null
+                && currentPageIndex >= 0 && currentPageIndex < pages.size()) {
+            titleView.setText(pages.get(currentPageIndex).name);
+        }
+    }
+
+    private void selectPage(int index) {
+        if (pages == null || index == currentPageIndex
+                || index < 0 || index >= pages.size()) {
+            return;
+        }
+        currentPageIndex = index;
+        prefs.edit().putInt(KEY_CURRENT_PAGE, index).apply();
+        loadCurrentPage();
+    }
+
+    private void loadCurrentPage() {
+        originalItems = pages.get(currentPageIndex).items;
+        items.clear();
+        items.addAll(originalItems);
+        selectedItem = null;
+        adapter.updateItems(items);
+        applySorting();
+        updateSelection();
+        updatePageTitle();
+    }
+
+    private void showPageSwitchPopup() {
+        if (pages == null) {
+            return;
+        }
+        final List<String> names = new ArrayList<>();
+        for (PagesStore.Page page : pages) {
+            names.add(page.name);
+        }
+        names.add(getString(R.string.manage));
+
+        final ListPopupWindow popup = new ListPopupWindow(this);
+        popup.setAnchorView(titleView != null ? titleView : itemListView);
+        popup.setHeight(ListPopupWindow.WRAP_CONTENT);
+        popup.setModal(true);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1, names) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView text = (TextView) view;
+                text.setTextColor(isThemeLight
+                        ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2"));
+                return view;
+            }
+        };
+        popup.setAdapter(adapter);
+
+        int maxWidth = 0;
+        for (int i = 0; i < adapter.getCount(); i++) {
+            View row = adapter.getView(i, null, null);
+            row.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            maxWidth = Math.max(maxWidth, row.getMeasuredWidth());
+        }
+        popup.setWidth(maxWidth);
+        if (titleView != null) {
+            popup.setHorizontalOffset((titleView.getWidth() - maxWidth) / 2);
+        }
+        popup.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                popup.dismiss();
+                if (position == names.size() - 1) {
+                    Intent intent = new Intent(MainActivity.this, PagesActivity.class);
+                    startActivity(intent);
+                } else {
+                    selectPage(position);
+                }
+            }
+        });
+        popup.show();
     }
 
     private void loadPreferences() {
@@ -747,49 +865,13 @@ public class MainActivity extends Activity {
         isThemeLight = prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT);
     }
 
-    private void loadItems() {
-        String itemsJson = prefs.getString(KEY_ITEMS, null);
-        if (itemsJson != null && !itemsJson.isEmpty()) {
-            try {
-                items.clear();
-                originalItems.clear();
-                selectedItem = null;
-                JSONArray foldersArray = new JSONArray(itemsJson);
-                if (foldersArray.length() > 0) {
-                    JSONObject folderObj = foldersArray.getJSONObject(0);
-                    JSONArray itemsArray = folderObj.getJSONArray("items");
-                    for (int i = 0; i < itemsArray.length(); i++) {
-                        JSONObject obj = itemsArray.getJSONObject(i);
-                        String name = obj.getString("name");
-                        int priorityIndex;
-                        try {
-                            String priorityStr = obj.getString("priority");
-                            priorityIndex = getPriorityIndex(priorityStr);
-                        } catch (Exception e) {
-                            // If not a string, try as integer
-                            try {
-                                int priorityInt = obj.getInt("priority");
-                                if (priorityInt >= 0 && priorityInt < PRIORITIES.length) {
-                                    priorityIndex = priorityInt;
-                                } else {
-                                    priorityIndex = 0;
-                                }
-                            } catch (Exception e2) {
-                                priorityIndex = 0;
-                            }
-                        }
-                        ListleItem item = new ListleItem(name, priorityIndex);
-                        items.add(item);
-                        originalItems.add(item);
-                    }
-                }
-                adapter.updateItems(items);
-                applySorting();
-                updateSelection();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    private void loadPages() {
+        pages = PagesStore.load(prefs);
+        currentPageIndex = prefs.getInt(KEY_CURRENT_PAGE, 0);
+        if (currentPageIndex < 0 || currentPageIndex >= pages.size()) {
+            currentPageIndex = 0;
         }
+        loadCurrentPage();
     }
 
     private void savePreferences() {
@@ -797,27 +879,11 @@ public class MainActivity extends Activity {
         editor.putInt(KEY_FONT_SIZE, fontSize);
         editor.putInt(KEY_VERTICAL_INTERVAL, verticalInterval);
         editor.putBoolean(KEY_THEME_LIGHT, isThemeLight);
-
-        try {
-            JSONArray itemsArray = new JSONArray();
-            for (ListleItem item : originalItems) {
-                JSONObject obj = new JSONObject();
-                obj.put("name", item.getName());
-                obj.put("priority", PRIORITIES[item.getPriority()]);
-                itemsArray.put(obj);
-            }
-            
-            JSONArray foldersArray = new JSONArray();
-            JSONObject folderObj = new JSONObject();
-            folderObj.put("name", "default");
-            folderObj.put("items", itemsArray);
-            foldersArray.put(folderObj);
-            
-            editor.putString(KEY_ITEMS, foldersArray.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        editor.putInt(KEY_CURRENT_PAGE, currentPageIndex);
         editor.apply();
+
+        if (pages != null) {
+            PagesStore.save(prefs, pages);
+        }
     }
 }
