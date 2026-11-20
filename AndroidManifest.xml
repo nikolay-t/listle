@@ -27,5 +27,10 @@
             android:name="PagesActivity"
             android:theme="@style/AppTheme"
             />
+
+        <activity
+            android:name="ContentEditActivity"
+            android:theme="@style/AppTheme"
+            />
     </application>
 </manifest>

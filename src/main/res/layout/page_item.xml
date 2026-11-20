@@ -24,6 +24,13 @@
         android:scaleType="fitCenter" />
 
     <ImageView
+        android:id="@+id/page_content_edit"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginLeft="8dp"
+        android:scaleType="fitCenter" />
+
+    <ImageView
         android:id="@+id/page_up"
         android:layout_width="24dp"
         android:layout_height="24dp"

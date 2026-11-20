@@ -3,6 +3,7 @@ package org.inline.listle;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -178,6 +179,8 @@ public class PagesActivity extends Activity {
                         .inflate(R.layout.page_item, parent, false);
             }
 
+            convertView.setTranslationY(0);
+
             Page page = pages.get(position);
 
             TextView nameView = (TextView) convertView.findViewById(R.id.page_name);
@@ -191,6 +194,18 @@ public class PagesActivity extends Activity {
                 @Override
                 public void onClick(View v) {
                     showRenamePageDialog(position);
+                }
+            });
+
+            ImageView contentEditIcon = (ImageView) convertView.findViewById(R.id.page_content_edit);
+            contentEditIcon.setImageResource(R.drawable.content_edit);
+            contentEditIcon.setColorFilter(tintColor(), PorterDuff.Mode.SRC_IN);
+            contentEditIcon.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(PagesActivity.this, ContentEditActivity.class);
+                    intent.putExtra(ContentEditActivity.EXTRA_PAGE_INDEX, position);
+                    startActivity(intent);
                 }
             });
 
