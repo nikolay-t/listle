@@ -20,6 +20,7 @@ import android.widget.TextView;
 
 import org.inline.listle.PagesStore.Page;
 import org.inline.listle.R;
+import org.inline.listle.theme.UiTheme;
 
 import java.util.List;
 

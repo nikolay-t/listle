@@ -25,6 +25,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import org.inline.listle.R;
+import org.inline.listle.theme.UiTheme;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -85,8 +86,6 @@ public class MainActivity extends Activity {
         itemListView = (ListView) findViewById(R.id.item_list);
         ActionBar actionBar = getActionBar();
         if (actionBar != null) {
-            actionBar.setBackgroundDrawable(
-                    new ColorDrawable(theme.getBackgroundColor()));
             actionBar.setCustomView(getTitleView(),
                     new ActionBar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT));
@@ -265,6 +264,7 @@ public class MainActivity extends Activity {
         popup.setDropDownGravity(Gravity.END);
         popup.setHeight(ListPopupWindow.WRAP_CONTENT);
         popup.setModal(true);
+        popup.setBackgroundDrawable(new ColorDrawable(theme.getBackgroundColor()));
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 R.layout.popup_menu_item, android.R.id.text1, options) {
             @Override
@@ -272,6 +272,7 @@ public class MainActivity extends Activity {
                 View view = super.getView(position, convertView, parent);
                 ImageView icon = (ImageView) view.findViewById(R.id.popup_icon);
                 icon.setImageResource(icons[position]);
+                icon.setColorFilter(theme.getTextColor(), PorterDuff.Mode.SRC_IN);
                 TextView text = (TextView) view.findViewById(android.R.id.text1);
                 text.setTextColor(theme.getTextColor());
                 return view;
@@ -727,6 +728,12 @@ public class MainActivity extends Activity {
         // Update edit bar icon colors
         applyEditBarTint();
 
+        ActionBar actionBar = getActionBar();
+        if (actionBar != null) {
+            actionBar.setBackgroundDrawable(
+                    new ColorDrawable(theme.getBackgroundColor()));
+        }
+
         if (titleView != null) {
             titleView.setTextColor(theme.getTextColor());
         }
@@ -806,6 +813,7 @@ public class MainActivity extends Activity {
         popup.setAnchorView(titleView != null ? titleView : itemListView);
         popup.setHeight(ListPopupWindow.WRAP_CONTENT);
         popup.setModal(true);
+        popup.setBackgroundDrawable(new ColorDrawable(theme.getBackgroundColor()));
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_list_item_1, names) {
             @Override

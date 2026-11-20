@@ -10,6 +10,7 @@ import android.widget.EditText;
 
 import org.inline.listle.PagesStore.Page;
 import org.inline.listle.R;
+import org.inline.listle.theme.UiTheme;
 
 import java.util.ArrayList;
 import java.util.List;
