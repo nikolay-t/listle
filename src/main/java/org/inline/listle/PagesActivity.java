@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -34,18 +33,13 @@ public class PagesActivity extends Activity {
     private SharedPreferences prefs;
     private List<Page> pages;
     private PageAdapter adapter;
-    private boolean isThemeLight = DEFAULT_THEME_LIGHT;
+    private UiTheme theme;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        isThemeLight = prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT);
-
-        if (isThemeLight) {
-            setTheme(R.style.AppTheme);
-        } else {
-            setTheme(R.style.AppTheme_Dark);
-        }
+        theme = UiTheme.from(prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT));
+        setTheme(theme.getThemeResId());
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pages);
@@ -76,7 +70,7 @@ public class PagesActivity extends Activity {
     }
 
     private int tintColor() {
-        return isThemeLight ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2");
+        return theme.getTextColor();
     }
 
     private void saveAndRefresh() {
@@ -244,14 +238,7 @@ public class PagesActivity extends Activity {
     }
 
     private void applyTheme() {
-        int bgColor;
-        if (isThemeLight) {
-            pagesListView.setBackgroundResource(R.drawable.gradient_light);
-            bgColor = Color.parseColor("#F7F7F7");
-        } else {
-            pagesListView.setBackgroundResource(R.drawable.gradient_dark);
-            bgColor = Color.parseColor("#080808");
-        }
-        pagesListView.setBackgroundColor(bgColor);
+        pagesListView.setBackgroundResource(theme.getGradientResId());
+        pagesListView.setBackgroundColor(theme.getBackgroundColor());
     }
 }

@@ -6,8 +6,8 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
     private List<ListleItem> originalItems;
     private int fontSize = DEFAULT_FONT_SIZE;
     private int verticalInterval = DEFAULT_VERTICAL_INTERVAL;
-    private boolean isThemeLight = DEFAULT_THEME_LIGHT;
+    private UiTheme theme;
     private boolean isPrioMode = false;
     private boolean isMoveMode = false;
     private boolean isEditBarVisible = false;
@@ -71,13 +71,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        isThemeLight = prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT);
-
-        if (isThemeLight) {
-            setTheme(R.style.AppTheme);
-        } else {
-            setTheme(R.style.AppTheme_Dark);
-        }
+        theme = UiTheme.from(prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT));
+        setTheme(theme.getThemeResId());
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -90,6 +85,8 @@ public class MainActivity extends Activity {
         itemListView = (ListView) findViewById(R.id.item_list);
         ActionBar actionBar = getActionBar();
         if (actionBar != null) {
+            actionBar.setBackgroundDrawable(
+                    new ColorDrawable(theme.getBackgroundColor()));
             actionBar.setCustomView(getTitleView(),
                     new ActionBar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT));
@@ -179,7 +176,7 @@ public class MainActivity extends Activity {
             menuItemMoveDown.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         }
 
-        int tintColor = isThemeLight ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2");
+        int tintColor = theme.getTextColor();
 
         for (int i = 0; i < menu.size(); i++) {
             MenuItem item = menu.getItem(i);
@@ -276,8 +273,7 @@ public class MainActivity extends Activity {
                 ImageView icon = (ImageView) view.findViewById(R.id.popup_icon);
                 icon.setImageResource(icons[position]);
                 TextView text = (TextView) view.findViewById(android.R.id.text1);
-                text.setTextColor(isThemeLight
-                        ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2"));
+                text.setTextColor(theme.getTextColor());
                 return view;
             }
         };
@@ -476,7 +472,7 @@ public class MainActivity extends Activity {
         if (editBarView == null) {
             return;
         }
-        int tintColor = isThemeLight ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2");
+        int tintColor = theme.getTextColor();
         int[] buttonIds = {R.id.btn_add, R.id.btn_rename, R.id.btn_move_up,
                 R.id.btn_move_down, R.id.btn_delete};
         for (int id : buttonIds) {
@@ -722,17 +718,9 @@ public class MainActivity extends Activity {
     }
 
     private void applyTheme() {
-        int bgColor;
-        if (isThemeLight) {
-            itemListView.setBackgroundResource(R.drawable.gradient_light);
-            adapter.setTextColor(Color.parseColor("#0D0D0D"));
-            bgColor = Color.parseColor("#F7F7F7");
-        } else {
-            itemListView.setBackgroundResource(R.drawable.gradient_dark);
-            adapter.setTextColor(Color.parseColor("#F2F2F2"));
-            bgColor = Color.parseColor("#080808");
-        }
-        adapter.setBackgroundColor(bgColor);
+        itemListView.setBackgroundResource(theme.getGradientResId());
+        adapter.setTextColor(theme.getTextColor());
+        adapter.setBackgroundColor(theme.getBackgroundColor());
         adapter.notifyDataSetChanged();
         invalidateOptionsMenu();
 
@@ -740,8 +728,7 @@ public class MainActivity extends Activity {
         applyEditBarTint();
 
         if (titleView != null) {
-            titleView.setTextColor(isThemeLight
-                    ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2"));
+            titleView.setTextColor(theme.getTextColor());
         }
     }
 
@@ -772,8 +759,7 @@ public class MainActivity extends Activity {
                 }
             });
         }
-        titleView.setTextColor(isThemeLight
-                ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2"));
+        titleView.setTextColor(theme.getTextColor());
         updatePageTitle();
         return titleView;
     }
@@ -826,8 +812,7 @@ public class MainActivity extends Activity {
             public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
                 TextView text = (TextView) view;
-                text.setTextColor(isThemeLight
-                        ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2"));
+                text.setTextColor(theme.getTextColor());
                 return view;
             }
         };
@@ -862,7 +847,7 @@ public class MainActivity extends Activity {
     private void loadPreferences() {
         fontSize = prefs.getInt(KEY_FONT_SIZE, DEFAULT_FONT_SIZE);
         verticalInterval = prefs.getInt(KEY_VERTICAL_INTERVAL, DEFAULT_VERTICAL_INTERVAL);
-        isThemeLight = prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT);
+        theme = UiTheme.from(prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT));
     }
 
     private void loadPages() {
@@ -878,7 +863,7 @@ public class MainActivity extends Activity {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putInt(KEY_FONT_SIZE, fontSize);
         editor.putInt(KEY_VERTICAL_INTERVAL, verticalInterval);
-        editor.putBoolean(KEY_THEME_LIGHT, isThemeLight);
+        editor.putBoolean(KEY_THEME_LIGHT, theme.isLight());
         editor.putInt(KEY_CURRENT_PAGE, currentPageIndex);
         editor.apply();
 

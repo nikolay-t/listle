@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -42,18 +41,13 @@ public class OptionsActivity extends Activity {
     private SharedPreferences prefs;
     private int fontSize = DEFAULT_FONT_SIZE;
     private int verticalInterval = DEFAULT_VERTICAL_INTERVAL;
-    private boolean isThemeLight = DEFAULT_THEME_LIGHT;
+    private UiTheme theme;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        isThemeLight = prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT);
-
-        if (isThemeLight) {
-            setTheme(R.style.AppTheme);
-        } else {
-            setTheme(R.style.AppTheme_Dark);
-        }
+        theme = UiTheme.from(prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT));
+        setTheme(theme.getThemeResId());
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_options);
@@ -74,8 +68,7 @@ public class OptionsActivity extends Activity {
             public View getView(int position, View convertView, android.view.ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
                 TextView textView = (TextView) view;
-                int optionsTextColor = isThemeLight ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2");
-                textView.setTextColor(optionsTextColor);
+                textView.setTextColor(theme.getTextColor());
                 return view;
             }
         };
@@ -163,12 +156,12 @@ public class OptionsActivity extends Activity {
         builder.setTitle(R.string.theme);
 
         final String[] themes = {getString(R.string.light), getString(R.string.dark)};
-        int selectedIndex = isThemeLight ? 0 : 1;
+        int selectedIndex = theme.isLight() ? 0 : 1;
 
         builder.setSingleChoiceItems(themes, selectedIndex, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                isThemeLight = (which == 0);
+                theme = (which == 0) ? UiTheme.light() : UiTheme.dark();
                 savePreferences();
                 recreate();
                 dialog.dismiss();
@@ -179,15 +172,8 @@ public class OptionsActivity extends Activity {
     }
 
     private void applyTheme() {
-        int bgColor;
-        if (isThemeLight) {
-            optionsListView.setBackgroundResource(R.drawable.gradient_light);
-            bgColor = Color.parseColor("#F7F7F7");
-        } else {
-            optionsListView.setBackgroundResource(R.drawable.gradient_dark);
-            bgColor = Color.parseColor("#080808");
-        }
-        optionsListView.setBackgroundColor(bgColor);
+        optionsListView.setBackgroundResource(theme.getGradientResId());
+        optionsListView.setBackgroundColor(theme.getBackgroundColor());
     }
 
     private void saveList() {
@@ -295,14 +281,14 @@ public class OptionsActivity extends Activity {
     private void loadPreferences() {
         fontSize = prefs.getInt(KEY_FONT_SIZE, DEFAULT_FONT_SIZE);
         verticalInterval = prefs.getInt(KEY_VERTICAL_INTERVAL, DEFAULT_VERTICAL_INTERVAL);
-        isThemeLight = prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT);
+        theme = UiTheme.from(prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT));
     }
 
     private void savePreferences() {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putInt(KEY_FONT_SIZE, fontSize);
         editor.putInt(KEY_VERTICAL_INTERVAL, verticalInterval);
-        editor.putBoolean(KEY_THEME_LIGHT, isThemeLight);
+        editor.putBoolean(KEY_THEME_LIGHT, theme.isLight());
         editor.apply();
     }
 }

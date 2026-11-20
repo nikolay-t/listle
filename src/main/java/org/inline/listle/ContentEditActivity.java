@@ -2,7 +2,6 @@ package org.inline.listle;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.View;
@@ -28,18 +27,13 @@ public class ContentEditActivity extends Activity {
     private List<Page> pages;
     private int pageIndex;
     private EditText editText;
-    private boolean isThemeLight = DEFAULT_THEME_LIGHT;
+    private UiTheme theme;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        isThemeLight = prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT);
-
-        if (isThemeLight) {
-            setTheme(R.style.AppTheme);
-        } else {
-            setTheme(R.style.AppTheme_Dark);
-        }
+        theme = UiTheme.from(prefs.getBoolean(KEY_THEME_LIGHT, DEFAULT_THEME_LIGHT));
+        setTheme(theme.getThemeResId());
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_content_edit);
@@ -116,13 +110,8 @@ public class ContentEditActivity extends Activity {
     }
 
     private void applyTheme() {
-        int textColor = isThemeLight ? Color.parseColor("#0D0D0D") : Color.parseColor("#F2F2F2");
-        editText.setTextColor(textColor);
+        editText.setTextColor(theme.getTextColor());
         View root = findViewById(R.id.content_edit_root);
-        if (isThemeLight) {
-            root.setBackgroundResource(R.drawable.gradient_light);
-        } else {
-            root.setBackgroundResource(R.drawable.gradient_dark);
-        }
+        root.setBackgroundResource(theme.getGradientResId());
     }
 }
